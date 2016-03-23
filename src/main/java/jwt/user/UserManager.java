@@ -1,7 +1,10 @@
 package jwt.user;
 
+import java.io.IOException;
+import java.util.Optional;
+
 public interface UserManager {
 
-  String payloadForUser(String username, String credentials);
+  Optional<String> payloadForUser(String username, String credentials) throws IOException;
 
 }

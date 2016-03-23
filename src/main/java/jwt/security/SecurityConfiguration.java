@@ -20,7 +20,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, new MockUserManager()));
+    auth
+        .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
+        .authenticationProvider(new JwtAuthenticationProvider(secretKey, new MockUserManager()));
   }
 
   @Override

@@ -9,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 public class MockUserManager implements UserManager {
 
@@ -17,26 +18,14 @@ public class MockUserManager implements UserManager {
 
   @Override
   @SuppressWarnings("unchecked")
-  public String payloadForUser(String username, String credentials) {
-    String payload = getUserPayload(username);
-    try {
-      Map<String, Object> user = objectMapper.readValue(payload, Map.class);
-      if (passwordEncoder.matches(credentials, (String) user.get("password"))) {
-        return payload;
-      } else {
-        throw new InvalidAuthenticationException("Acces denied");
-      }
-    } catch (IOException e) {
-      throw new InvalidAuthenticationException("Access denied", e);
+  public Optional<String> payloadForUser(String username, String credentials) throws IOException {
+    String payload = IOUtils.toString(new ClassPathResource(String.format("%s.json", username)).getInputStream());
+    Map<String, Object> user = objectMapper.readValue(payload, Map.class);
+    if (passwordEncoder.matches(credentials, (String) user.get("password"))) {
+      user.remove("password");
+      return Optional.of(objectMapper.writeValueAsString(user));
     }
-  }
-
-  private String getUserPayload(String username) throws AuthenticationException {
-    try {
-      return IOUtils.toString(new ClassPathResource(String.format("%s.json", username)).getInputStream());
-    } catch (IOException e) {
-      throw new InvalidAuthenticationException("Access denied", e);
-    }
+    return Optional.empty();
   }
 
 }

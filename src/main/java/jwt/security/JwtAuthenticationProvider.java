@@ -11,8 +11,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
@@ -35,27 +37,32 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
     try {
-      return authentication instanceof JwtAuthenticationToken ?
-          getJwtAuthentication(((JwtAuthenticationToken) authentication).getToken()) :
-          getJwtAuthentication(getToken(authentication));
+      String token = authentication instanceof JwtAuthenticationToken ?
+          ((JwtAuthenticationToken) authentication).getToken() : getToken(authentication);
+      return getJwtAuthentication(token);
     } catch (RuntimeException e) {
       throw new InvalidAuthenticationException("Access denied", e);
     }
   }
 
+  @SuppressWarnings("unchecked")
   private Authentication getJwtAuthentication(String token) {
     Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-    List<SimpleGrantedAuthority> grantedAuthorities = ((List<Map<String, String>>) claimsJws.getBody().get("roles")).stream().map(
-        m -> new SimpleGrantedAuthority(m.get("role"))).collect(toList());
+    List<SimpleGrantedAuthority> grantedAuthorities = ((List<Map<String, String>>) claimsJws.getBody().get("roles"))
+        .stream().map(m -> new SimpleGrantedAuthority(m.get("role"))).collect(toList());
     return new JwtAuthenticationToken(grantedAuthorities, claimsJws.getBody().get("username", String.class), token);
   }
 
   private String getToken(Authentication authentication) {
     String name = authentication.getName();
     String credentials = (String) authentication.getCredentials();
-    //do some lookup of the user
-    String payLoad = userManager.payloadForUser(name, credentials);
-    return Jwts.builder().setPayload(payLoad).signWith(SignatureAlgorithm.HS512, secretKey).compact();
+    try {
+      String payLoad = userManager.payloadForUser(name, credentials)
+          .orElseThrow(() -> new InvalidAuthenticationException("Access denied"));
+      return Jwts.builder().setPayload(payLoad).signWith(SignatureAlgorithm.HS512, secretKey).compact();
+    } catch (IOException e) {
+      throw new InvalidAuthenticationException("Access denied",e);
+    }
   }
 
 }
