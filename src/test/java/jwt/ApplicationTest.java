@@ -49,8 +49,8 @@ public class ApplicationTest {
     boolean signed = Jwts.parser().isSigned(token);
     assertTrue(signed);
 
-    Jwt<Header, Claims> jwt = Jwts.parser().setSigningKey(secretKey).parse(token);
-    assertEquals("John Doe", jwt.getBody().get("username"));
+    Jws<Claims> jws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+    assertEquals("John Doe", jws.getBody().get("username"));
 
     assertUserName(token, 200, "John Doe", "/admin/user");
   }
