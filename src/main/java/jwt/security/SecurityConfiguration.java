@@ -33,6 +33,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
         .authorizeRequests()
         .antMatchers("/admin/**").hasRole("ADMIN")
+        .antMatchers("/health").permitAll()
         .antMatchers("/**").hasRole("USER");
   }
 
