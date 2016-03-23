@@ -11,9 +11,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
@@ -23,7 +20,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.authenticationProvider(new JwtAuthenticationProvider(secretKey(), new MockUserManager()));
+    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, new MockUserManager()));
   }
 
   @Override
@@ -39,7 +36,4 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .antMatchers("/**").hasRole("USER");
   }
 
-  private SecretKey secretKey() {
-    return new SecretKeySpec(secretKey.getBytes(), "AES");
-  }
 }

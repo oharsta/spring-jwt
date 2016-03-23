@@ -16,12 +16,12 @@ public class UserController {
 
   @RequestMapping(method = RequestMethod.POST, value = "/token")
   public String token(Authentication authentication) {
-    return ((JwtAuthenticationToken)authentication).getToken();
+    return ((JwtAuthenticationToken) authentication).getToken();
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/user")
   public Map<String, String> user(Authentication authentication) {
-    return singletonMap("user",  authentication.getName());
+    return singletonMap("user", authentication.getName());
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/admin/user")

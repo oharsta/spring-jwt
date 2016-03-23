@@ -49,7 +49,7 @@ public class ApplicationTest {
     boolean signed = Jwts.parser().isSigned(token);
     assertTrue(signed);
 
-    Jwt<Header, Claims> jwt = Jwts.parser().setSigningKey(secretKey()).parse(token);
+    Jwt<Header, Claims> jwt = Jwts.parser().setSigningKey(secretKey).parse(token);
     assertEquals("John Doe", jwt.getBody().get("username"));
 
     assertUserName(token, 200, "John Doe", "/admin/user");
@@ -97,10 +97,6 @@ public class ApplicationTest {
     ResponseEntity<String> response = template.exchange("http://localhost:" + port + "/token", HttpMethod.POST, entity, String.class);
     assertEquals(expectedStatus, response.getStatusCode().value());
     return response.getBody();
-  }
-
-  private SecretKey secretKey() {
-    return new SecretKeySpec(secretKey.getBytes(), "AES");
   }
 
 }

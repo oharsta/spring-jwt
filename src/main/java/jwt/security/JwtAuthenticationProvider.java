@@ -1,6 +1,9 @@
 package jwt.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import jwt.user.UserManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -8,7 +11,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import javax.crypto.SecretKey;
 import java.util.List;
 import java.util.Map;
 
@@ -16,10 +18,10 @@ import static java.util.stream.Collectors.toList;
 
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
-  private final SecretKey secretKey;
+  private final String secretKey;
   private final UserManager userManager;
 
-  public JwtAuthenticationProvider(SecretKey secretKey, UserManager userManager) {
+  public JwtAuthenticationProvider(String secretKey, UserManager userManager) {
     this.secretKey = secretKey;
     this.userManager = userManager;
   }
@@ -42,10 +44,10 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
   }
 
   private Authentication getJwtAuthentication(String token) {
-    Jwt<Header, Claims> jwt = Jwts.parser().setSigningKey(secretKey).parse(token);
-    List<SimpleGrantedAuthority> grantedAuthorities = ((List<Map<String, String>>) jwt.getBody().get("roles")).stream().map(
+    Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+    List<SimpleGrantedAuthority> grantedAuthorities = ((List<Map<String, String>>) claimsJws.getBody().get("roles")).stream().map(
         m -> new SimpleGrantedAuthority(m.get("role"))).collect(toList());
-    return new JwtAuthenticationToken(grantedAuthorities, jwt, token);
+    return new JwtAuthenticationToken(grantedAuthorities, claimsJws.getBody().get("username", String.class), token);
   }
 
   private String getToken(Authentication authentication) {

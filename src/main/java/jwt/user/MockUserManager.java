@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jwt.security.InvalidAuthenticationException;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
