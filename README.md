@@ -19,8 +19,11 @@ The secured endpoint for obtaining a token:
 TOKEN=$(curl -X POST -H "Content-Type: application/json" --user john.doe:secret http://localhost:8080/token)
 ```
 
+You can validate the token on https://jwt.io/ using the base64 encoded secret from [application.properties](src/main/resources/application.properties).
+
 To access the admin endpoint using the token:
 
 ```bash
 curl -H "X-AUTH-TOKEN: $TOKEN" -H "Content-Type: application/json" http://localhost:8080/admin/user
 ```
+
