@@ -54,7 +54,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     String name = authentication.getName();
     String credentials = (String) authentication.getCredentials();
     //do some lookup of the user
-    String payLoad = userManager.validateUser(name, credentials);
+    String payLoad = userManager.payloadForUser(name, credentials);
     return Jwts.builder().setPayload(payLoad).signWith(SignatureAlgorithm.HS512, secretKey).compact();
   }
 

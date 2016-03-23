@@ -17,7 +17,7 @@ public class MockUserManager implements UserManager {
 
   @Override
   @SuppressWarnings("unchecked")
-  public String validateUser(String username, String credentials) {
+  public String payloadForUser(String username, String credentials) {
     String payload = getUserPayload(username);
     try {
       Map<String, Object> user = objectMapper.readValue(payload, Map.class);
