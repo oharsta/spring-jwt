@@ -3,6 +3,10 @@ jdk:
   - oraclejdk8
 before_install:
   - pip install --user codecov
+services: mongodb
+before_script:
+  - sleep 15
+  - mongo local --eval 'db.addUser("travis", "local");'
 after_success:
   - codecov
 

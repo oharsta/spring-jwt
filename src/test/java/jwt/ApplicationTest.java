@@ -1,63 +1,39 @@
 package jwt;
 
-import io.jsonwebtoken.*;
-import org.junit.Before;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.TestRestTemplate;
-import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
-@WebIntegrationTest(randomPort = true)
-public class ApplicationTest {
-
-  private HttpHeaders headers;
-
-  @Value("${local.server.port}")
-  private int port;
-
-  @Value("${secret.key}")
-  private String secretKey;
-
-  @Before
-  public void before() {
-    headers = new PrePopulatedJsonHttpHeaders();
-  }
+public class ApplicationTest extends AbstractApplicationTest {
 
   @Test
   public void testAdminJwtToken() {
-    String token = getToken(Optional.of("john.doe"), "secret");
+    String token = getToken(Optional.of("John Doe"), "secret");
 
     boolean signed = Jwts.parser().isSigned(token);
     assertTrue(signed);
 
     Jws<Claims> jws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
     assertEquals("John Doe", jws.getBody().get("username"));
+    assertNull(jws.getBody().get("password"));
 
     assertUserName(token, 200, "John Doe", "/admin/user");
   }
 
   @Test
   public void testNoAdminRights() {
-    String token = getToken(Optional.of("mary.doe"), "secret");
+    String token = getToken(Optional.of("Mary Doe"), "secret");
     assertUserName(token, 200, "Mary Doe", "/user");
     assertUserName(token, 403, "N/A", "/admin/user");
   }
@@ -69,7 +45,7 @@ public class ApplicationTest {
 
   @Test
   public void testNotValidPassword() {
-    getToken(Optional.of("john.doe"), "wrong", 403);
+    getToken(Optional.of("John Doe"), "wrong", 403);
   }
 
   @Test

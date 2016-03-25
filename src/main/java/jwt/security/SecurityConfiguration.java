@@ -1,6 +1,9 @@
 package jwt.security;
 
-import jwt.user.MockUserManager;
+import jwt.user.MongoUserManager;
+import jwt.user.UserManager;
+import jwt.user.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -18,11 +21,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Value("${secret.key}")
   private String secretKey;
 
+  @Autowired
+  private UserManager userManager;
+
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception {
     auth
         .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
-        .authenticationProvider(new JwtAuthenticationProvider(secretKey, new MockUserManager()));
+        .authenticationProvider(new JwtAuthenticationProvider(secretKey, userManager));
   }
 
   @Override

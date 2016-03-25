@@ -4,11 +4,7 @@
   "password": "$2a$10$lj455voWCw14S0MVJ0eGn.tBVzn0PUPGqBhXE.2/FBS4t42vOu4c2",
   "organization": "Example Inc.",
   "roles": [
-    {
-      "role": "ROLE_USER"
-    },
-    {
-      "role": "ROLE_ADMIN"
-    }
+    "ROLE_USER",
+    "ROLE_ADMIN"
   ]
 }
