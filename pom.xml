@@ -107,6 +107,7 @@
         <configuration>
           <excludes>
             <exclude>**/Application.*</exclude>
+            <exclude>**/MockMailBox.*</exclude>
           </excludes>
         </configuration>
         <executions>
