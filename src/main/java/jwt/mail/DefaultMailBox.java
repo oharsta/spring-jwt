@@ -21,11 +21,16 @@ public class DefaultMailBox implements MailBox {
 
   @Autowired
   private JavaMailSender mailSender;
+  private final String baseUrl;
+
+  public DefaultMailBox(String baseUrl) {
+    this.baseUrl = baseUrl;
+  }
 
   @Override
   public void sendInvitationMail(User user) {
     try {
-      sendMail("mail/invite.html", "Invitation StoreWise", user.getEmail(), singletonMap("@@unique_invite_link@@", "http://localhost:8080/invite?key=" + user.getInvitationHash()));
+      sendMail("mail/invite.html", "Invitation StoreWise", user.getEmail(), singletonMap("@@unique_invite_link@@", baseUrl + "/invite?key=" + user.getInvitationHash()));
     } catch (MessagingException | IOException e) {
       throw new RuntimeException(e);
     }

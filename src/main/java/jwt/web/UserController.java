@@ -51,12 +51,12 @@ public class UserController {
   }
 
   @RequestMapping(method = RequestMethod.POST, value = "/owner/user")
-  public User createUser(@Validated @RequestBody User user) {
+  public User createUser(@Validated @RequestBody User user) throws UnsupportedEncodingException {
     return doCreateUser(user, "USER");
   }
 
   @RequestMapping(method = RequestMethod.POST, value = "/admin/user")
-  public User createOwner(@Validated @RequestBody User user) {
+  public User createOwner(@Validated @RequestBody User user) throws UnsupportedEncodingException {
     return doCreateUser(user, "USER", "OWNER");
   }
 
@@ -67,7 +67,7 @@ public class UserController {
     userRepository.save(user);
   }
 
-  private User doCreateUser(User user, String... roles) {
+  private User doCreateUser(User user, String... roles) throws UnsupportedEncodingException {
     Optional<User> userByUsername = userRepository.findUserByUsername(user.getUsername());
     if (userByUsername.isPresent()) {
       throw new DuplicateKeyException(format("User with username %s already exists", user.getUsername()));
@@ -77,15 +77,11 @@ public class UserController {
     return saved;
   }
 
-  private String generateInvitationHash() {
+  private String generateInvitationHash() throws UnsupportedEncodingException {
     Random ranGen = new SecureRandom();
     byte[] aesKey = new byte[512];
     ranGen.nextBytes(aesKey);
-    try {
-      return encode(getEncoder().encodeToString(aesKey), "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
+    return encode(getEncoder().encodeToString(aesKey), "UTF-8");
   }
 
 }

@@ -84,7 +84,4 @@ public class User {
     return invitationHash;
   }
 
-  public void setInvitationHash(String invitationHash) {
-    this.invitationHash = invitationHash;
-  }
 }

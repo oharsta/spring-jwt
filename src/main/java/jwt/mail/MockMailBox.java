@@ -10,6 +10,10 @@ import java.io.IOException;
 
 public class MockMailBox extends DefaultMailBox {
 
+  public MockMailBox(String baseUrl) {
+    super(baseUrl);
+  }
+
   @Override
   protected void doSendMail(MimeMessage message) {
     //nope

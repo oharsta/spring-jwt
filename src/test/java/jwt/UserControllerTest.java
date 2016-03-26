@@ -6,8 +6,7 @@ import io.jsonwebtoken.Jwts;
 import jwt.domain.Invitation;
 import jwt.domain.User;
 import org.junit.Test;
-import org.springframework.boot.test.TestRestTemplate;
-import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
@@ -16,11 +15,12 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.*;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.http.HttpMethod.POST;
 
-public class ApplicationTest extends AbstractApplicationTest {
+public class UserControllerTest extends AbstractApplicationTest {
 
   @Test
   public void testAdminJwtToken() {
@@ -65,6 +65,22 @@ public class ApplicationTest extends AbstractApplicationTest {
   }
 
   @Test
+  public void testCreateUserExistingName() {
+    String token = getToken(Optional.of("John Doe"), "secret");
+
+    User user = new User("Pete Doe", "o@t.com", "org", emptyList());
+    ResponseEntity<Map> response = exchangeWithToken(token, "/admin/user", Optional.of(user), POST);
+
+    assertEquals(500, response.getStatusCode().value());
+    assertEquals(DuplicateKeyException.class.getName(), response.getBody().get("exception"));
+  }
+
+  @Test
+  public void testInactiveUserToken() {
+    getToken(Optional.of("Inactive Doe"), "secret", 403);
+  }
+
+  @Test
   public void testCreateUser() {
     String token = getToken(Optional.of("Pete Doe"), "secret");
     Map user = doTestCreateUser(token, "/owner/user", "USER");
@@ -75,7 +91,7 @@ public class ApplicationTest extends AbstractApplicationTest {
     Map map = mongoTemplate.findOne(query, Map.class, "users");
 
     ResponseEntity<Void> response = restTemplate.exchange("http://localhost:" + port + "invitation/accept", POST,
-        new HttpEntity(new Invitation((String)map.get("invitationHash"), "secret"), headers), Void.class);
+        new HttpEntity(new Invitation((String) map.get("invitationHash"), "secret"), headers), Void.class);
     assertEquals(200, response.getStatusCode().value());
 
     User activatedUser = mongoTemplate.findOne(query(Criteria.where("_id").is(user.get("id"))), User.class);
@@ -83,7 +99,7 @@ public class ApplicationTest extends AbstractApplicationTest {
   }
 
   private Map doTestCreateUser(String token, String path, String... roles) {
-    User user = new User(UUID.randomUUID().toString(), "oharsta@zilverline.com", "organization", Collections.emptyList());
+    User user = new User(UUID.randomUUID().toString(), "oharsta@zilverline.com", "organization", emptyList());
     ResponseEntity<Map> response = exchangeWithToken(token, path, Optional.of(user), POST);
 
     assertEquals(200, response.getStatusCode().value());

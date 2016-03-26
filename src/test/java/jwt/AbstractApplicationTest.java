@@ -54,7 +54,7 @@ public class AbstractApplicationTest {
   public void before() {
     headers = new PrePopulatedJsonHttpHeaders();
     mongoTemplate.dropCollection("users");
-    Arrays.asList("john.doe.json", "mary.doe.json", "pete.doe.json").forEach(this::saveJson);
+    Arrays.asList("john.doe", "mary.doe", "pete.doe", "inactive.doe").forEach(this::saveJson);
   }
 
   protected String getToken(Optional<String> username, String credentials) {
@@ -71,7 +71,7 @@ public class AbstractApplicationTest {
 
   private void saveJson(String path) {
     try {
-      mongoTemplate.save(IOUtils.toString(new ClassPathResource("mongo/" + path).getInputStream()), "users");
+      mongoTemplate.save(IOUtils.toString(new ClassPathResource("mongo/" + path + ".json").getInputStream()), "users");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
