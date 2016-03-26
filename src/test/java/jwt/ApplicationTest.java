@@ -3,17 +3,22 @@ package jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import jwt.domain.Invitation;
+import jwt.domain.User;
 import org.junit.Test;
 import org.springframework.boot.test.TestRestTemplate;
+import org.springframework.data.mongodb.core.query.BasicQuery;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.http.HttpMethod.POST;
 
 public class ApplicationTest extends AbstractApplicationTest {
 
@@ -53,26 +58,58 @@ public class ApplicationTest extends AbstractApplicationTest {
     assertUserName("invalid.token", 403, "Mary Doe", "/user");
   }
 
+  @Test
+  public void testCreateOwner() {
+    String token = getToken(Optional.of("John Doe"), "secret");
+    doTestCreateUser(token, "/admin/user", "USER", "OWNER");
+  }
+
+  @Test
+  public void testCreateUser() {
+    String token = getToken(Optional.of("Pete Doe"), "secret");
+    Map user = doTestCreateUser(token, "/owner/user", "USER");
+
+    //activate the user
+    Query query = query(Criteria.where("_id").is(user.get("id")));
+    query.fields().include("invitationHash");
+    Map map = mongoTemplate.findOne(query, Map.class, "users");
+
+    ResponseEntity<Void> response = restTemplate.exchange("http://localhost:" + port + "invitation/accept", POST,
+        new HttpEntity(new Invitation((String)map.get("invitationHash"), "secret"), headers), Void.class);
+    assertEquals(200, response.getStatusCode().value());
+
+    User activatedUser = mongoTemplate.findOne(query(Criteria.where("_id").is(user.get("id"))), User.class);
+    assertTrue(activatedUser.isActive());
+  }
+
+  private Map doTestCreateUser(String token, String path, String... roles) {
+    User user = new User(UUID.randomUUID().toString(), "oharsta@zilverline.com", "organization", Collections.emptyList());
+    ResponseEntity<Map> response = exchangeWithToken(token, path, Optional.of(user), POST);
+
+    assertEquals(200, response.getStatusCode().value());
+
+    Map body = response.getBody();
+
+    assertEquals(false, body.get("active"));
+    assertNotNull(body.get("id"));
+    assertEquals(user.getEmail(), body.get("email"));
+    assertEquals(Arrays.asList(roles), body.get("roles"));
+
+    return body;
+  }
+
   private void assertUserName(String token, int expectedStatus, String expectedUserName, String path) {
-    headers.add("X-AUTH-TOKEN", token);
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-    ResponseEntity<Map> adminResponse = new TestRestTemplate().exchange("http://localhost:" + port + path, HttpMethod.GET, entity, Map.class);
-    assertEquals(expectedStatus, adminResponse.getStatusCode().value());
+    ResponseEntity<Map> response = exchangeWithToken(token, path, Optional.empty(), HttpMethod.GET);
+    assertEquals(expectedStatus, response.getStatusCode().value());
     if (expectedStatus == 200) {
-      assertEquals(expectedUserName, adminResponse.getBody().get("user"));
+      assertEquals(expectedUserName, response.getBody().get("user"));
     }
   }
 
-  private String getToken(Optional<String> username, String credentials) {
-    return getToken(username, credentials, 200);
-  }
-
-  private String getToken(Optional<String> username, String credentials, int expectedStatus) {
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-    RestTemplate template = username.isPresent() ? new TestRestTemplate(username.get(), credentials) : new TestRestTemplate();
-    ResponseEntity<String> response = template.exchange("http://localhost:" + port + "/token", HttpMethod.POST, entity, String.class);
-    assertEquals(expectedStatus, response.getStatusCode().value());
-    return response.getBody();
+  private ResponseEntity<Map> exchangeWithToken(String token, String path, Optional<Object> body, HttpMethod httpMethod) {
+    headers.add("X-AUTH-TOKEN", token);
+    HttpEntity entity = body.isPresent() ? new HttpEntity(body.get(), headers) : new HttpEntity(headers);
+    return restTemplate.exchange("http://localhost:" + port + path, httpMethod, entity, Map.class);
   }
 
 }

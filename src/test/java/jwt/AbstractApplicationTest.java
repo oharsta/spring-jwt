@@ -31,6 +31,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
 @WebIntegrationTest(randomPort = true, value = {"spring.data.mongodb.database=local"})
@@ -47,16 +48,30 @@ public class AbstractApplicationTest {
   @Autowired
   protected MongoTemplate mongoTemplate;
 
+  protected RestTemplate restTemplate = new TestRestTemplate();
+
   @Before
   public void before() {
     headers = new PrePopulatedJsonHttpHeaders();
     mongoTemplate.dropCollection("users");
-    Arrays.asList("mongo/john.doe.json", "mongo/mary.doe.json").forEach(this::saveJson);
+    Arrays.asList("john.doe.json", "mary.doe.json", "pete.doe.json").forEach(this::saveJson);
+  }
+
+  protected String getToken(Optional<String> username, String credentials) {
+    return getToken(username, credentials, 200);
+  }
+
+  protected String getToken(Optional<String> username, String credentials, int expectedStatus) {
+    HttpEntity<String> entity = new HttpEntity<>(headers);
+    RestTemplate template = username.isPresent() ? new TestRestTemplate(username.get(), credentials) : new TestRestTemplate();
+    ResponseEntity<String> response = template.exchange("http://localhost:" + port + "/token", HttpMethod.POST, entity, String.class);
+    assertEquals(expectedStatus, response.getStatusCode().value());
+    return response.getBody();
   }
 
   private void saveJson(String path) {
     try {
-      mongoTemplate.save(IOUtils.toString(new ClassPathResource(path).getInputStream()), "users");
+      mongoTemplate.save(IOUtils.toString(new ClassPathResource("mongo/" + path).getInputStream()), "users");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

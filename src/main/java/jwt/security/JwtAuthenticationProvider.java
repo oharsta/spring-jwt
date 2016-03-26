@@ -2,12 +2,13 @@ package jwt.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jwt.domain.User;
-import jwt.user.UserManager;
+import jwt.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,8 +17,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -26,12 +25,12 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
   private ObjectMapper objectMapper = new ObjectMapper();
 
   private final String secretKey;
-  private final UserManager userManager;
+  private final UserRepository userRepository;
 
-  public JwtAuthenticationProvider(String secretKey, UserManager userManager) {
+  public JwtAuthenticationProvider(String secretKey, UserRepository userRepository) {
     this.secretKey = secretKey;
-    this.userManager = userManager;
-
+    this.userRepository = userRepository;
+    this.objectMapper.registerModule(new AfterburnerModule());
   }
 
   @Override
@@ -57,6 +56,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     return new JwtAuthenticationToken(grantedAuthorities(user.getRoles()), user.getUsername(), token);
   }
 
+  @SuppressWarnings("unchecked")
   private Authentication getJwtAuthentication(String token) {
     //this will fail if the token is tampered with
     Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
@@ -69,8 +69,12 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
   }
 
   private User getUser(Authentication authentication) throws IOException {
-    return userManager.loadUser(authentication.getName(), (String) authentication.getCredentials())
+    User user = userRepository.loadUser(authentication.getName(), (String) authentication.getCredentials())
         .orElseThrow(() -> new InvalidAuthenticationException("Access denied"));
+    if (!user.isActive()) {
+      throw new InvalidAuthenticationException("Access denied");
+    }
+    return user;
   }
 
 }

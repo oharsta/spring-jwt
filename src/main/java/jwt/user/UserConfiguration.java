@@ -27,10 +27,5 @@ private String databaseName;
     return mongeez;
   }
 
-  @Bean
-  @Autowired
-  public UserManager userManager(UserRepository userRepository) {
-    return new MongoUserManager(userRepository);
-  }
 
 }

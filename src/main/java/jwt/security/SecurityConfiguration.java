@@ -1,7 +1,5 @@
 package jwt.security;
 
-import jwt.user.MongoUserManager;
-import jwt.user.UserManager;
 import jwt.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,13 +20,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   private String secretKey;
 
   @Autowired
-  private UserManager userManager;
+  private UserRepository userRepository;
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception {
     auth
         .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
-        .authenticationProvider(new JwtAuthenticationProvider(secretKey, userManager));
+        .authenticationProvider(new JwtAuthenticationProvider(secretKey, userRepository));
   }
 
   @Override
@@ -41,7 +39,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
         .authorizeRequests()
         .antMatchers("/admin/**").hasRole("ADMIN")
-        .antMatchers("/health").permitAll()
+        .antMatchers("/owner/**").hasAnyRole("OWNER", "ADMIN")
+        .antMatchers("/health", "invitation/accept").permitAll()
         .antMatchers("/**").hasRole("USER");
   }
 

@@ -1,16 +1,17 @@
 package jwt.security;
 
-import jwt.user.UserManager;
+import jwt.user.UserRepository;
 import org.junit.Test;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class JwtAuthenticationProviderTest {
 
-  private JwtAuthenticationProvider subject = new JwtAuthenticationProvider("secret", mock(UserManager.class));
+  private JwtAuthenticationProvider subject = new JwtAuthenticationProvider("secret", mock(UserRepository.class));
 
   @Test
   public void testSupports() throws Exception {
