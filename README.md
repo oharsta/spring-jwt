@@ -11,6 +11,12 @@ This demo application shows how very simple it is with Spring Security to secure
 
 There is a BASIC AUTH secured endpoint for obtaining a JWT. With the JWT the client can call the other secured endpoints.
 
+## [Requirements](#requirements)
+
+* JDK8
+* MongoDB
+* Maven3(+)
+
 ## [cUrl](#curl)
 
 The secured endpoint for obtaining a token:
