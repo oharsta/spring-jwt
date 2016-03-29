@@ -32,7 +32,7 @@ public class DefaultMailBoxTest extends AbstractApplicationTest {
     mailBox.sendInvitationMail(user);
 
     //we send async
-    Thread.sleep(500);
+    Thread.sleep(1500);
 
     MimeMessage mimeMessage = greenMail.getReceivedMessages()[0];
     String body = getBody(mimeMessage);
