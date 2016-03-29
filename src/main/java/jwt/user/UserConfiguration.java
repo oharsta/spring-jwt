@@ -15,7 +15,7 @@ import java.net.UnknownHostException;
 public class UserConfiguration {
 
   @Value("${spring.data.mongodb.database}")
-private String databaseName;
+  private String databaseName;
 
   @Bean
   public MongeezRunner mongeezRunner() throws UnknownHostException {

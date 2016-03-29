@@ -1,7 +1,6 @@
 package jwt.mail;
 
 import com.icegreen.greenmail.junit.GreenMailRule;
-import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import jwt.AbstractApplicationTest;
 import jwt.domain.User;

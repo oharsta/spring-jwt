@@ -3,11 +3,10 @@ package jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import jwt.domain.Invitation;
+import jwt.domain.AcceptInvitation;
 import jwt.domain.User;
 import org.junit.Test;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -17,6 +16,7 @@ import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.*;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.http.HttpMethod.POST;
 
@@ -83,19 +83,26 @@ public class UserControllerTest extends AbstractApplicationTest {
   @Test
   public void testCreateUser() {
     String token = getToken(Optional.of("Pete Doe"), "secret");
-    Map user = doTestCreateUser(token, "/owner/user", "USER");
+    Object id = doTestCreateUser(token, "/owner/user", "USER").get("id");
 
     //activate the user
-    Query query = query(Criteria.where("_id").is(user.get("id")));
+    Query query = query(where("_id").is(id));
     query.fields().include("invitationHash");
     Map map = mongoTemplate.findOne(query, Map.class, "users");
 
-    ResponseEntity<Void> response = restTemplate.exchange("http://localhost:" + port + "invitation/accept", POST,
-        new HttpEntity(new Invitation((String) map.get("invitationHash"), "secret"), headers), Void.class);
-    assertEquals(200, response.getStatusCode().value());
+    acceptInvitation(map, 200);
 
-    User activatedUser = mongoTemplate.findOne(query(Criteria.where("_id").is(user.get("id"))), User.class);
+    User activatedUser = mongoTemplate.findOne(query(where("_id").is(id)), User.class);
     assertTrue(activatedUser.isActive());
+
+    //we can't accept twice
+    acceptInvitation(map, 404);
+  }
+
+  private void acceptInvitation(Map map, int expectedStatus) {
+    ResponseEntity<Void> response = restTemplate.exchange("http://localhost:" + port + "invitation/accept", POST,
+        new HttpEntity(new AcceptInvitation((String) map.get("invitationHash"), "secret"), headers), Void.class);
+    assertEquals(expectedStatus, response.getStatusCode().value());
   }
 
   private Map doTestCreateUser(String token, String path, String... roles) {
@@ -124,7 +131,7 @@ public class UserControllerTest extends AbstractApplicationTest {
 
   private ResponseEntity<Map> exchangeWithToken(String token, String path, Optional<Object> body, HttpMethod httpMethod) {
     headers.add("X-AUTH-TOKEN", token);
-    HttpEntity entity = body.isPresent() ? new HttpEntity(body.get(), headers) : new HttpEntity(headers);
+    HttpEntity entity = new HttpEntity(body.orElse(null), headers) ;
     return restTemplate.exchange("http://localhost:" + port + path, httpMethod, entity, Map.class);
   }
 

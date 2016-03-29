@@ -1,13 +1,13 @@
 package jwt.web;
 
-import jwt.domain.Invitation;
+import jwt.domain.AcceptInvitation;
+import jwt.domain.InvitationNotFoundException;
 import jwt.domain.User;
 import jwt.mail.MailBox;
 import jwt.security.JwtAuthenticationToken;
 import jwt.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,14 +16,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.*;
 
 import static java.lang.String.format;
 import static java.net.URLEncoder.encode;
+import static java.util.Arrays.asList;
 import static java.util.Base64.getEncoder;
 import static java.util.Collections.singletonMap;
+import static jwt.user.UserRepository.passwordEncoder;
 
 @RestController
 @RequestMapping(headers = {"Content-Type=application/json"}, produces = {"application/json"})
@@ -60,10 +61,10 @@ public class UserController {
     return doCreateUser(user, "USER", "OWNER");
   }
 
-  @RequestMapping(method = RequestMethod.POST, value = "invitation/accept")
-  public void invitationAccept(@Validated @RequestBody Invitation invitation) {
-    User user = userRepository.findUserByInvitationHash(invitation.getInvitationHash()).orElseThrow(RuntimeException::new);
-    user.activate(UserRepository.passwordEncoder.encode(invitation.getPassword()));
+  @RequestMapping(method = RequestMethod.POST, value = "/invitation/accept")
+  public void invitationAccept(@Validated @RequestBody AcceptInvitation acceptInvitation) {
+    User user = userRepository.findUserByInvitationHash(acceptInvitation.getInvitationHash()).orElseThrow(InvitationNotFoundException::new);
+    user.activate(passwordEncoder.encode(acceptInvitation.getPassword()));
     userRepository.save(user);
   }
 
@@ -72,15 +73,16 @@ public class UserController {
     if (userByUsername.isPresent()) {
       throw new DuplicateKeyException(format("User with username %s already exists", user.getUsername()));
     }
-    User saved = userRepository.save(new User(user.getUsername(), user.getEmail(), user.getOrganization(), Arrays.asList(roles), generateInvitationHash()));
+    User saved = userRepository.save(new User(user.getUsername(), user.getEmail(), user.getOrganization(), asList(roles), generateInvitationHash()));
     mailBox.sendInvitationMail(saved);
     return saved;
   }
 
   private String generateInvitationHash() throws UnsupportedEncodingException {
-    Random ranGen = new SecureRandom();
+    //this does not happen ofter, no need for performance optimization
+    Random secureRandom = new SecureRandom();
     byte[] aesKey = new byte[512];
-    ranGen.nextBytes(aesKey);
+    secureRandom.nextBytes(aesKey);
     return encode(getEncoder().encodeToString(aesKey), "UTF-8");
   }
 

@@ -1,12 +1,9 @@
 package jwt;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
+import com.mongodb.*;
 import jwt.user.UserRepository;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +11,9 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.boot.test.TestRestTemplate;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.mongodb.core.DbCallback;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,13 +22,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -48,13 +43,15 @@ public class AbstractApplicationTest {
   @Autowired
   protected MongoTemplate mongoTemplate;
 
+  @Autowired
+  protected UserRepository userRepository;
+
   protected RestTemplate restTemplate = new TestRestTemplate();
 
   @Before
-  public void before() {
+  public void before() throws IOException {
     headers = new PrePopulatedJsonHttpHeaders();
-    mongoTemplate.dropCollection("users");
-    Arrays.asList("john.doe", "mary.doe", "pete.doe", "inactive.doe").forEach(this::saveJson);
+    seed();
   }
 
   protected String getToken(Optional<String> username, String credentials) {
@@ -63,18 +60,16 @@ public class AbstractApplicationTest {
 
   protected String getToken(Optional<String> username, String credentials, int expectedStatus) {
     HttpEntity<String> entity = new HttpEntity<>(headers);
-    RestTemplate template = username.isPresent() ? new TestRestTemplate(username.get(), credentials) : new TestRestTemplate();
+    RestTemplate template = new TestRestTemplate(username.orElse(null), credentials) ;
     ResponseEntity<String> response = template.exchange("http://localhost:" + port + "/token", HttpMethod.POST, entity, String.class);
     assertEquals(expectedStatus, response.getStatusCode().value());
     return response.getBody();
   }
 
-  private void saveJson(String path) {
-    try {
-      mongoTemplate.save(IOUtils.toString(new ClassPathResource("mongo/" + path + ".json").getInputStream()), "users");
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  private void seed() throws IOException {
+    mongoTemplate.dropCollection("users");
+    String command = IOUtils.toString(new ClassPathResource("mongo/seed.js").getInputStream());
+    mongoTemplate.execute(db -> db.eval(command));
   }
 
 }

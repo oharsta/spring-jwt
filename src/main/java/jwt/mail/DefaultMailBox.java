@@ -30,7 +30,7 @@ public class DefaultMailBox implements MailBox {
   @Override
   public void sendInvitationMail(User user) {
     try {
-      sendMail("mail/invite.html", "Invitation StoreWise", user.getEmail(), singletonMap("@@unique_invite_link@@", baseUrl + "/invite?key=" + user.getInvitationHash()));
+      sendMail("mail/invite.html", "AcceptInvitation StoreWise", user.getEmail(), singletonMap("@@unique_invite_link@@", baseUrl + "/invite?key=" + user.getInvitationHash()));
     } catch (MessagingException | IOException e) {
       throw new RuntimeException(e);
     }

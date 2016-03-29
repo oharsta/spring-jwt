@@ -78,6 +78,7 @@ public class User {
   public void activate(String password) {
     this.active = true;
     this.password = password;
+    this.invitationHash = null;
   }
 
   public String getInvitationHash() {

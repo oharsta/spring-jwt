@@ -15,11 +15,8 @@ public interface UserRepository extends MongoRepository<User, String> {
 
   Optional<User> findUserByInvitationHash(String invitationHash);
 
-  default Optional<User> loadUser(String username, String credentials) throws IOException {
+  default Optional<User> loadUser(String username, String credentials) {
     Optional<User> userOptional = findUserByUsername(username);
-    if (userOptional.isPresent() && passwordEncoder.matches(credentials, userOptional.get().getPassword())) {
-      return userOptional;
-    }
-    return Optional.empty();
+    return userOptional.map(user -> user.isActive() && passwordEncoder.matches(credentials, user.getPassword()) ? user : null);
   }
 }

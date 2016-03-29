@@ -2,24 +2,25 @@ package jwt.domain;
 
 import javax.validation.constraints.NotNull;
 
-public class Invitation {
-
+public class AcceptInvitation {
+  @NotNull
   private String invitationHash;
+  @NotNull
   private String password;
 
-  public Invitation() {
+  public AcceptInvitation() {
   }
 
-  public Invitation(String invitationHash, String password) {
+  public AcceptInvitation(String invitationHash, String password) {
     this.invitationHash = invitationHash;
     this.password = password;
   }
 
-  @NotNull
+
   public String getInvitationHash() {
     return invitationHash;
   }
-  @NotNull
+
   public String getPassword() {
     return password;
   }
